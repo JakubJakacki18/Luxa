@@ -22,14 +22,13 @@
     display: flex;
     gap: 10px;
     flex-direction: row;
+    border-radius: 0 0 15px 15px;
 }
 
 .trigger {
 }
 
 .newBox {
-    /* 		max-width: 1500px;
-			width: 90%; */
     margin: auto;
     padding: 40px 0;
 }
@@ -60,20 +59,15 @@
     object-fit: cover;
 }
 
-/* 	.target:hover
-								{
-									opacity: 1;
-								} */
 .wrapper {
     display: flex;
     flex-wrap: wrap;
-    /* Odstęp między kontenerami */
 }
 
 .grid-container {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 10px; /* Odstęp między elementami */
+    gap: 10px;
     grid-auto-flow: dense;
 }
 
@@ -92,7 +86,6 @@
 
 .like {
     position: relative;
-    /*margin-left: 15px;*/
     left: 0;
     width: 25px;
     height: 25px;

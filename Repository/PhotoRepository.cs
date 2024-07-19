@@ -53,12 +53,12 @@ namespace Luxa.Repository
 			return Save();
 		}
 
-		public bool RemoveLikeFromPhoto(UserPhotoModel userPhoto)
+		public bool RemoveLikeToPhoto(UserPhotoModel userPhoto)
 		{
 			_context.UserLikedPhotos.Remove(userPhoto);
 			return Save();
 		}
-		public bool AddLikeFromPhoto(UserPhotoModel userPhoto)
+		public bool AddLikeToPhoto(UserPhotoModel userPhoto)
 		{
 			_context.UserLikedPhotos.Add(userPhoto);
 			return Save();

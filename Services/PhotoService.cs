@@ -160,13 +160,13 @@ namespace Luxa.Services
                 User = user,
                 UserId = user.Id
             };
-            return _photoRepository.AddLikeFromPhoto(userPhoto);
+            return _photoRepository.AddLikeToPhoto(userPhoto);
         }
 
         public bool UnlikePhoto(int idPhoto, UserModel user)
         {
             var userPhoto = _photoRepository.GetUserPhotoModelByPhoto(idPhoto, user);
-            return (userPhoto != null) && _photoRepository.RemoveLikeFromPhoto(userPhoto);
+            return (userPhoto != null) && _photoRepository.RemoveLikeToPhoto(userPhoto);
         }
 
         public async Task<List<PhotoWithIsLikedVM>> GetPhotosWithIsLikedAsync(int pageNumber, int pageSize,

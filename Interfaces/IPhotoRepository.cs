@@ -8,8 +8,8 @@ namespace Luxa.Interfaces
         bool Save();
         bool Add(Photo photo);
         UserPhotoModel? GetUserPhotoModelByPhoto(int idPhoto, UserModel user);
-        bool AddLikeFromPhoto(UserPhotoModel userPhoto);
-        bool RemoveLikeFromPhoto(UserPhotoModel userPhoto);
+        bool AddLikeToPhoto(UserPhotoModel userPhoto);
+        bool RemoveLikeToPhoto(UserPhotoModel userPhoto);
         IQueryable<Photo> GetLikedPhotos(UserModel user);
         IQueryable<Photo> GetPhotosAsync();
         IQueryable<Photo> GetPhotosAsync(int pageNumber, int pageSize);

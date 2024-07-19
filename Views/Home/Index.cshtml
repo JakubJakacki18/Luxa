@@ -2,7 +2,7 @@
 @{
 	ViewData["Title"] = "Strona główna";
 }
-<style>
+@* <style>
 	.target {
 		position: absolute;
 		bottom: 0;
@@ -104,7 +104,7 @@
 		position: relative;
 		left: 0;
 	}
-</style>
+</style> *@
 
 
 @* <div class="grid-container">
@@ -133,9 +133,10 @@
 </div>
 
 
+<script type="module" src="/js/gallery.js"></script>
 
+@* 
 <script>
-
 	let pageNumber = 1;
 	const pageSize = 30;
 	const maxQuantityOfColumns = 6;
@@ -165,9 +166,6 @@
 			columnDiv.innerHTML = '<div class=columnHeight></div>';
 			galery.appendChild(columnDiv)
 		}
-
-
-
 	}
 
 	async function loadPhotos() {
@@ -333,4 +331,4 @@
 		});
 	};
 
-</script>
+</script> *@
