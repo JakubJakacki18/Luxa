@@ -39,7 +39,9 @@
 
 </div>
 
-<script>
+<script type="module" src="/js/gallery.js"></script>
+
+@* <script>
 	let pageNumber = 1;
 	const pageSize = 30;
 	const maxQuantityOfColumns = 6;
@@ -49,11 +51,7 @@
 	const path = '/assets/';
 	const likePath = path + 'hand-thumbs-up-fill.svg';
 	const unlikePath = path + 'hand-thumbs-up.svg';
-	let category = "";
-	let orderAsc = false;
-	let sortBy = "date";
-	var tag = "";
-	let isNotAllPhotos = true;
+	
 
 	function getWindowWidth() {
 		var windowWidth = document.documentElement.clientWidth;
@@ -275,7 +273,6 @@
 			info.remove();
 		}
 		await initPhotos();
-
 	};
-</script>
+</script> *@
 

@@ -1,5 +1,5 @@
-﻿import { getShortestColumn } from './utils.js';
-import { unlikePath, likePath } from './gallery.js';
+﻿import { getShortestColumn, getOrder } from './utils.js';
+import { unlikePath, likePath, setDefaultPageNumberAndIsNotAllPhotos, setSearchingAttributes,initPhotos } from './gallery.js';
 
 export function generateColumns(windowWidth, maxQuantityOfColumns, pixelsPerColumn) {
 	const galery = document.querySelector('.photo-galery');
@@ -104,4 +104,22 @@ export function notifyAboutLackOfPhotos()
 	info.id = 'photos-info';
 	info.innerHTML = '<div class="alert alert-primary" role="alert">Nie ma więcej zdjęć do wyświetlenia</div>';
 	newBox.appendChild(info);
+};
+
+export async function changeData() {
+	const photoGalery = document.getElementById("photo-galery");
+	photoGalery.innerHTML = '';
+	setDefaultPageNumberAndIsNotAllPhotos();
+	const Atributes = {
+		tag: document.getElementById("searchTag")?.value || "",
+		category: document.getElementById("category")?.value || "",
+		orderAsc: getOrder(document.getElementById("orderDirection")?.value || ""),
+		sortBy: document.getElementById("orderBy")?.value || "date"
+	};
+	setSearchingAttributes(Atributes);
+	const info = document.getElementById("photos-info");
+	if (info) {
+		info.remove();
+	}
+	await initPhotos();
 };

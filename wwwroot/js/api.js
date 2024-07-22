@@ -1,7 +1,11 @@
 ﻿import { addPhotosToColumns, changeLikeButton, notifyAboutLackOfPhotos } from './ui.js';
+import { tag, category, orderAsc, sortBy } from './gallery.js';
 
 export async function loadPhotos(pageNumber, pageSize) {
-	const response = await fetch(`/Home/LoadPhotos?pageNumber=${pageNumber}&pageSize=${pageSize}`);
+	console.log(pageNumber + " " + pageSize + " " + tag + " " + category + " " + orderAsc + " " + sortBy);
+	const response = await fetch
+		(`/Home/LoadPhotosForDiscover?pageNumber=${pageNumber}&pageSize=${pageSize}&tag=${tag}&category=${category}
+		&orderAsc=${orderAsc}&sortBy=${sortBy}`);
 	if (response.status === 401) {
 		alert("Nie jesteś zalogowany. Zaloguj się");
 		window.location.href = '/SignIn';

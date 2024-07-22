@@ -11,3 +11,13 @@ export function getShortestColumn(columns) {
     }
     return shortestColumn;
 }
+
+export function getOrder(orderDirection) {
+    console.log(orderDirection);
+    if (orderDirection === "ASC") {
+        return true;
+    }
+    else {
+        return false;
+    }
+};
