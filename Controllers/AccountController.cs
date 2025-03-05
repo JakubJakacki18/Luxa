@@ -13,23 +13,14 @@ using System.Security.Claims;
 
 namespace Luxa.Controllers
 {
-    public class AccountController : Controller
+    public class AccountController(ApplicationDbContext context, SignInManager<UserModel> signInManager,
+        UserManager<UserModel> userManager, NotificationService notificationService, IUserService userService) : Controller
     {
-        private readonly SignInManager<UserModel> _signInManager;
-        private readonly UserManager<UserModel> _userManager;
-        private readonly ApplicationDbContext _context;
-        private readonly NotificationService _notificationService;
-        private readonly IUserService _userService;
-
-        public AccountController(ApplicationDbContext context, SignInManager<UserModel> signInManager,
-            UserManager<UserModel> userManager, NotificationService notificationService, IUserService userService)
-        {
-            _context = context;
-            _signInManager = signInManager;
-            _userManager = userManager;
-            _notificationService = notificationService;
-            _userService = userService;
-        }
+        private readonly SignInManager<UserModel> _signInManager = signInManager;
+        private readonly UserManager<UserModel> _userManager = userManager;
+        private readonly ApplicationDbContext _context = context;
+        private readonly NotificationService _notificationService = notificationService;
+        private readonly IUserService _userService = userService;
 
         //Atrybut do routingu (reszta kodu w program.cs)
         [Route("signin", Name = "SignIn")]

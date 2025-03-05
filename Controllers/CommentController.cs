@@ -9,30 +9,17 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace Luxa.Controllers
 {
-    public class CommentController : Controller
+    public class CommentController(ICommentService commentService, IUserService userService, ApplicationDbContext context, UserManager<UserModel> userManager, IWebHostEnvironment hostEnvironment, IPhotoService photoService) : Controller
     {
-        private readonly ICommentService _commentService;
-        private readonly IPhotoService _photoService;
-        private readonly ApplicationDbContext _context; //wstrzykiwanie kontekstu
-        private readonly UserManager<UserModel> _userManager;
-        private readonly IWebHostEnvironment _hostEnvironment;
-        private readonly IUserService _userService;
-    
+        private readonly ICommentService _commentService = commentService;
+        private readonly IPhotoService _photoService = photoService;
+        private readonly ApplicationDbContext _context = context; //wstrzykiwanie kontekstu
+        private readonly UserManager<UserModel> _userManager = userManager;
+        private readonly IWebHostEnvironment _hostEnvironment = hostEnvironment;
+        private readonly IUserService _userService = userService;
 
-        public CommentController(ICommentService commentService, IUserService userService, ApplicationDbContext context, UserManager<UserModel> userManager, IWebHostEnvironment hostEnvironment, IPhotoService photoService)
-        {
-            _commentService = commentService;
-            _context = context;
-            _userManager = userManager;
-            _hostEnvironment = hostEnvironment;
-            _photoService = photoService;
-            _userService = userService;
-            
-
-        }
-
-		// Akcja pobierająca komentarze dla określonego zdjęcia
-		[Authorize]
+        // Akcja pobierająca komentarze dla określonego zdjęcia
+        [Authorize]
 		public async Task<IActionResult> GetCommentsForPhoto(int photoId)
         {
             var comments = await _commentService.GetCommentsForPhoto(photoId);

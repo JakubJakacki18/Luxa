@@ -6,20 +6,12 @@ using System.Diagnostics;
 
 namespace Luxa.Controllers
 {
-    public class HomeController : Controller
+    public class HomeController(ILogger<HomeController> logger, IPhotoService photoService, IHomeService homeService, IUserService userService) : Controller
     {
-        private readonly ILogger<HomeController> _logger;
-        private readonly IPhotoService _photoService;
-        private readonly IHomeService _homeService;
-        private readonly IUserService _userService;
-
-        public HomeController(ILogger<HomeController> logger, IPhotoService photoService, IHomeService homeService, IUserService userService)
-        {
-            _logger = logger;
-            _photoService = photoService;
-            _homeService = homeService;
-            _userService = userService;
-        }
+        private readonly ILogger<HomeController> _logger = logger;
+        private readonly IPhotoService _photoService = photoService;
+        private readonly IHomeService _homeService = homeService;
+        private readonly IUserService _userService = userService;
 
         //Widoki
         [Authorize]

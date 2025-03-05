@@ -9,27 +9,16 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Luxa.Controllers
 {
-    public class PhotosController : Controller
+    public class PhotosController(IUserService userService, ApplicationDbContext context, UserManager<UserModel> userManager, IWebHostEnvironment hostEnvironment, IPhotoService photoService, ICommentService commentService) : Controller
     {
-        private readonly IPhotoService _photoService;
+        private readonly IPhotoService _photoService = photoService;
 
-        private readonly ApplicationDbContext _context; //wstrzykiwanie kontekstu
+        private readonly ApplicationDbContext _context = context; //wstrzykiwanie kontekstu
 
-        private readonly UserManager<UserModel> _userManager;
-        private readonly IWebHostEnvironment _hostEnvironment;
-        private readonly IUserService _userService;
-        private readonly ICommentService _commentService;
-
-
-        public PhotosController(IUserService userService, ApplicationDbContext context, UserManager<UserModel> userManager, IWebHostEnvironment hostEnvironment, IPhotoService photoService, ICommentService commentService)
-        {
-            _context = context;
-            _userManager = userManager;
-            _hostEnvironment = hostEnvironment;
-            _photoService = photoService;
-            _userService = userService;
-            _commentService = commentService;
-        }
+        private readonly UserManager<UserModel> _userManager = userManager;
+        private readonly IWebHostEnvironment _hostEnvironment = hostEnvironment;
+        private readonly IUserService _userService = userService;
+        private readonly ICommentService _commentService = commentService;
 
         [Authorize(Roles = "admin,moderator")]
         public async Task<IActionResult> Index()

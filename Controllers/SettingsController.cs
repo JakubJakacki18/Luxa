@@ -10,23 +10,16 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Luxa.Controllers
 {
-	public class SettingsController : Controller
+	public class SettingsController(ISettingsService settingsService, IUserService userService, UserManager<UserModel> userManager,
+        ApplicationDbContext context, NotificationService notificationService) : Controller
 	{
-		private readonly ISettingsService _settingsService;
-		private readonly IUserService _userService;
-		private readonly UserManager<UserModel> _userManager;
-		private readonly ApplicationDbContext _context;
-		private readonly NotificationService _notificationService;
-		public SettingsController(ISettingsService settingsService, IUserService userService, UserManager<UserModel> userManager,
-			ApplicationDbContext context, NotificationService notificationService)
-		{
-			_settingsService = settingsService;
-			_userService = userService;
-			_userManager = userManager;
-			_context = context;
-			_notificationService = notificationService;
-		}
-		[Authorize]
+		private readonly ISettingsService _settingsService = settingsService;
+		private readonly IUserService _userService = userService;
+		private readonly UserManager<UserModel> _userManager = userManager;
+		private readonly ApplicationDbContext _context = context;
+		private readonly NotificationService _notificationService = notificationService;
+
+        [Authorize]
 		public IActionResult Options()
 		{
 			return View();

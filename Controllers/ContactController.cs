@@ -5,17 +5,12 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Luxa.Controllers
 {
-    public class ContactController : Controller
+    public class ContactController(IContactService contactService, IUserService userService) : Controller
     {
-        private readonly IContactService _contactService;
-        private readonly IUserService _userService;
+        private readonly IContactService _contactService = contactService;
+        private readonly IUserService _userService = userService;
 
-        public ContactController(IContactService contactService, IUserService userService)
-        {
-            _contactService = contactService;
-            _userService = userService;
-        }
-		[Authorize]
+        [Authorize]
 		public IActionResult UserContact()
         {
             return View();
