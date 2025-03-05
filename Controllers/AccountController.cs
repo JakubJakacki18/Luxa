@@ -34,22 +34,25 @@ namespace Luxa.Controllers
         [HttpPost]
         public async Task<IActionResult> SignIn(SignInVM signInVM)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid
+                /*|| string.IsNullOrEmpty(signInVM.UserName)
+                || string.IsNullOrEmpty(signInVM.Password)*/
+                )
             {
-                var result = await _signInManager.PasswordSignInAsync(signInVM.UserName!, signInVM.Password!, signInVM.RememberMe, false);
-                if (result.Succeeded)
-                {
-                    var user = _userService.GetCurrentLoggedInUserWithPhotos(User);
-                    if (user != null)
-                    {
-                        await _userService.UpdateReputation(user);
-                        return RedirectToAction("Index", "Home");
-                    }
-                }
-
                 ModelState.AddModelError("", "Niepoprawna próba logowania");
+                return View(signInVM);
             }
-
+            var result = await _signInManager.PasswordSignInAsync(signInVM.UserName!, signInVM.Password!, signInVM.RememberMe, false);
+            if (result.Succeeded)
+            {
+                var user = _userService.GetCurrentLoggedInUserWithPhotos(User);
+                if (user != null)
+                {
+                    await _userService.UpdateReputation(user);
+                    return RedirectToAction("Index", "Home");
+                }
+            }
+            ModelState.AddModelError("", "Niepoprawna próba logowania");
             return View(signInVM);
         }
 
@@ -83,25 +86,24 @@ namespace Luxa.Controllers
             };
 
             var result = await _userManager.CreateAsync(user);
-            if (result.Succeeded)
+            if (!result.Succeeded)
             {
-                await _userManager.AddLoginAsync(user, info);
-                //nadanie roli uzytkownikowi
-                var roleResult = await _userManager.AddToRoleAsync(user, UserRoles.Regular);
-                if (!roleResult.Succeeded)
-                {
-                    foreach (var error in roleResult.Errors)
-                    {
-                        ModelState.AddModelError("", error.Description);
-                    }
-                    return View("SignIn");
-                }
-
-                await _signInManager.SignInAsync(user, isPersistent: false);
-                return RedirectToAction("Index", "Home");
+                return RedirectToAction(nameof(SignIn));
             }
 
-            return RedirectToAction(nameof(SignIn));
+            await _userManager.AddLoginAsync(user, info);
+            var roleResult = await _userManager.AddToRoleAsync(user, UserRoles.Regular);
+            if (!roleResult.Succeeded)
+            {
+                foreach (var error in roleResult.Errors)
+                {
+                    ModelState.AddModelError("", error.Description);
+                }
+                return View("SignIn");
+            }
+
+            await _signInManager.SignInAsync(user, isPersistent: false);
+            return RedirectToAction("Index", "Home");
         }
 
         [HttpGet]
@@ -114,54 +116,59 @@ namespace Luxa.Controllers
         [HttpPost]
         public async Task<IActionResult> SignUp(SignUpVM signUpVM)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid 
+                //|| string.IsNullOrEmpty(signUpVM.UserName)
+                //|| string.IsNullOrEmpty(signUpVM.Email)
+                )
             {
-                UserModel user = new()
-                {
-                    UserName = signUpVM.UserName,
-                    Email = signUpVM.Email,
-                };
+                return View(signUpVM);
+            }
 
-                var resultAddUser = await _userManager.CreateAsync(user, signUpVM.Password!);
-                if (resultAddUser.Errors.Any())
+            UserModel user = new()
+            {
+                UserName = signUpVM.UserName,
+                Email = signUpVM.Email,
+            };
+
+            var resultAddUser = await _userManager.CreateAsync(user, signUpVM.Password!);
+            if (resultAddUser.Errors.Any())
+            {
+                foreach (var error in resultAddUser.Errors)
                 {
-                    foreach (var error in resultAddUser.Errors)
+                    switch (error.Code)
                     {
-                        switch (error.Code)
-                        {
-                            case "PasswordTooShort":
-                                ModelState.AddModelError("", "Hasło musi zawierać minimum 6 znaków");
-                                break;
-                            case "DuplicateUserName":
-                                ModelState.AddModelError("", "Użytkownik o danej nazwie użytkownika już istnieje, wybierz inną nazwę");
-                                break;
-                            default:
-                                ModelState.AddModelError("", $"Nastąpił błąd {error.Code}, spróbuj ponownie");
-                                break;
-                        }
+                        case "PasswordTooShort":
+                            ModelState.AddModelError("", "Hasło musi zawierać minimum 6 znaków");
+                            break;
+                        case "DuplicateUserName":
+                            ModelState.AddModelError("", "Użytkownik o danej nazwie użytkownika już istnieje, wybierz inną nazwę");
+                            break;
+                        default:
+                            ModelState.AddModelError("", $"Nastąpił błąd {error.Code}, spróbuj ponownie");
+                            break;
                     }
-                    return View(signUpVM);
                 }
-                var resultAddRole = await _userManager.AddToRoleAsync(user, UserRoles.Regular);
-                foreach (var error in resultAddRole.Errors)
-                {
-                    ModelState.AddModelError("", $"Nastąpił błąd {error.Code}, spróbuj ponownie");
-                }
-                if (resultAddRole.Errors.Any())
-                {
-                    return View(signUpVM);
-                }
-                if (resultAddUser.Succeeded && resultAddRole.Succeeded)
-                {
-                    var notifications = _context.Notifications.ToList();
-                    user.UserNotifiacations.Add(new UserNotificationModel
-                    { User = user, Notification = notifications[0] });
-                    user.UserNotifiacations.Add(new UserNotificationModel
-                    { User = user, Notification = notifications[1] });
-                    _context.SaveChanges();
-                    await _signInManager.SignInAsync(user, false);
-                    return RedirectToAction("Index", "Home");
-                }
+                return View(signUpVM);
+            }
+            var resultAddRole = await _userManager.AddToRoleAsync(user, UserRoles.Regular);
+            foreach (var error in resultAddRole.Errors)
+            {
+                ModelState.AddModelError("", $"Nastąpił błąd {error.Code}, spróbuj ponownie");
+            }
+            if (resultAddRole.Errors.Any())
+            {
+                return View(signUpVM);
+            }
+            if (resultAddUser.Succeeded && resultAddRole.Succeeded)
+            {
+                var notifications = _context.Notifications.ToList();
+                user.UserNotifiacations.Add(new UserNotificationModel
+                { User = user, Notification = notifications[0] });
+                user.UserNotifiacations.Add(new UserNotificationModel
+                { User = user, Notification = notifications[1] });
+                _context.SaveChanges();
+                await _signInManager.SignInAsync(user, false);
+                return RedirectToAction("Index", "Home");
             }
             return View(signUpVM);
         }

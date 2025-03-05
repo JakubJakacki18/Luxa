@@ -1,6 +1,7 @@
 ﻿using Luxa.Data;
 using Luxa.Interfaces;
 using Luxa.Models;
+using Luxa.ViewModel;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
@@ -40,24 +41,24 @@ namespace Luxa.Services
             return currentUser;
         }
 
-        public async Task<UserModel?> GetUserByUserName(string userName) 
+        public async Task<UserModel?> GetUserByUserName(string userName)
             => await _context.Users.SingleOrDefaultAsync(u => u.UserName == userName);
 
         public async Task<bool> IsUserWithUserNameExist(string userName)
             => await _context.Users.AnyAsync(u => u.UserName == userName);
 
-		public async Task<bool> RemoveUserById(string Id)
-		{
+        public async Task<bool> RemoveUserById(string Id)
+        {
             var user = await _userManager.FindByIdAsync(Id);
-            if (user == null) 
+            if (user == null)
             {
                 return false;
             }
             var result = await _userManager.DeleteAsync(user);
-			return result.Succeeded;
-		}
+            return result.Succeeded;
+        }
 
-		public async Task<bool> SaveUser(UserModel userModel)
+        public async Task<bool> SaveUser(UserModel userModel)
         {
             var result = await _userManager.UpdateAsync(userModel);
             return result.Succeeded;
@@ -112,17 +113,28 @@ namespace Luxa.Services
                 .ToListAsync();
         }
 
-        public async Task<bool> IsOwnerOrAdmin(string? OwnerName, ClaimsPrincipal user) 
+        public async Task<bool> IsOwnerOrAdmin(string? OwnerName, ClaimsPrincipal user)
         {
             var loggedUser = GetCurrentLoggedInUser(user);
-            if (loggedUser == null) 
+            if (loggedUser == null)
                 return false;
             var isInRoleAdmin = await _signInManager.UserManager.IsInRoleAsync(loggedUser, UserRoles.Admin);
             var isInRoleModerator = await _signInManager.UserManager.IsInRoleAsync(loggedUser, UserRoles.Moderator);
-           
-            if (isInRoleAdmin ||  isInRoleModerator || loggedUser.UserName == OwnerName)
+
+            if (isInRoleAdmin || isInRoleModerator || loggedUser.UserName == OwnerName)
                 return true;
             return false;
         }
-    }
+        public async Task<IdentityResult?> SignUpNewUser(string userName, string email, string password)
+        {
+            UserModel user = new()
+            {
+                UserName = userName,
+                Email = email,
+            };
+            return await _userManager.CreateAsync(user, password);
+        }
+
+}
+
 }
