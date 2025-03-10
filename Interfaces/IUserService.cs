@@ -16,5 +16,6 @@ namespace Luxa.Interfaces
         Task<List<FollowModel>> GetPendingFollowRequests(string userId);
         Task<List<UserModel>> GetFollowedUsers(string userId);
         Task<bool> IsOwnerOrAdmin(string? OwnerName, ClaimsPrincipal user);
+        Task<List<UserModel>> GetAllUsers();
     }
 }

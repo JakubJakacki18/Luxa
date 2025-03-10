@@ -181,23 +181,20 @@ namespace Luxa.Controllers
         [Authorize(Roles = "admin,moderator")]
         public async Task<IActionResult> UsersList()
         {
-            var users = _context.Users.ToList();
-            var usersWithRoles = new List<UsersListVM>();
-            foreach (var user in users)
+            var usersListVM = new List<UserEntryVM>();
+            List<UserModel> users = await _userService.GetAllUsers();
+            var tasks = users.Select(async user =>
             {
                 var roles = await _userManager.GetRolesAsync(user);
-                var notifications = _notificationService.GetNotificationsForUser(user.Id);
-
-                var userListVM = new UsersListVM
+                //var notifications = await _notificationService.GetNotificationsForUser(user.Id);
+                return new UserEntryVM
                 {
                     User = user,
                     Roles = roles,
-                    Notifications = notifications
                 };
-                usersWithRoles.Add(userListVM);
-            }
-
-            return View(usersWithRoles);
+            });
+            usersListVM = (await Task.WhenAll(tasks)).ToList();
+            return View(usersListVM);
         }
 
         //W fazie rozwoju

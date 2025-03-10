@@ -1,6 +1,7 @@
 ﻿using Luxa.Data;
 using Luxa.Interfaces;
 using Luxa.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace Luxa.Repository
 {
@@ -25,5 +26,10 @@ namespace Luxa.Repository
 
         private async Task<bool> SaveAsync()
             => await _context.SaveChangesAsync() > 0;
+        
+
+        public async Task<List<UserModel>> GetAllUsers()
+            => await _context.Users.ToListAsync();
+        
     }
 }

@@ -15,14 +15,15 @@ namespace Luxa.Services
         private readonly ApplicationDbContext _context;
         private readonly UserManager<UserModel> _userManager;
         private readonly IPhotoRepository _photoRepository;
-
+        private readonly IUserRepository _userRepository;
         public UserService(SignInManager<UserModel> signInManager,
-            UserManager<UserModel> userManager, IPhotoRepository photoRepository, ApplicationDbContext context)
+            UserManager<UserModel> userManager, IPhotoRepository photoRepository, ApplicationDbContext context, IUserRepository userRepository)
         {
             _signInManager = signInManager;
             _userManager = userManager;
             _photoRepository = photoRepository;
             _context = context;
+            _userRepository = userRepository;
         }
 
         public UserModel? GetCurrentLoggedInUser(ClaimsPrincipal user)
@@ -126,7 +127,11 @@ namespace Luxa.Services
             return false;
         }
 
+        public async Task<List<UserModel>> GetAllUsers()
+            => await _userRepository.GetAllUsers();
 
-}
+
+
+    }
 
 }
