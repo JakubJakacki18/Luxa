@@ -1,0 +1,29 @@
+﻿using Luxa.Data;
+using Luxa.Interfaces;
+using Luxa.Models;
+
+namespace Luxa.Repository
+{
+    public class UserRepository : IUserRepository
+    {
+        private readonly ApplicationDbContext _context;
+        public UserRepository(ApplicationDbContext context)
+        {
+            _context = context;
+        }
+
+        public async Task<bool> AddUserNotification(string userId, NotificationModel notification)
+        {
+            var userNotification = new UserNotificationModel
+            {
+                UserId = userId,
+                Notification = notification
+            };
+            _context.UserNotifications.Add(userNotification);
+            return await SaveAsync();
+        }
+
+        private async Task<bool> SaveAsync()
+            => await _context.SaveChangesAsync() > 0;
+    }
+}

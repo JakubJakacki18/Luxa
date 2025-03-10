@@ -129,7 +129,6 @@ namespace Luxa.Controllers
                 UserName = signUpVM.UserName,
                 Email = signUpVM.Email,
             };
-
             var resultAddUser = await _userManager.CreateAsync(user, signUpVM.Password!);
             if (resultAddUser.Errors.Any())
             {
@@ -161,12 +160,7 @@ namespace Luxa.Controllers
             }
             if (resultAddUser.Succeeded && resultAddRole.Succeeded)
             {
-                var notifications = _context.Notifications.ToList();
-                user.UserNotifiacations.Add(new UserNotificationModel
-                { User = user, Notification = notifications[0] });
-                user.UserNotifiacations.Add(new UserNotificationModel
-                { User = user, Notification = notifications[1] });
-                _context.SaveChanges();
+                await _notificationService.AssignDefaultNotificationToNewAccount(user);
                 await _signInManager.SignInAsync(user, false);
                 return RedirectToAction("Index", "Home");
             }

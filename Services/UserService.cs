@@ -125,15 +125,7 @@ namespace Luxa.Services
                 return true;
             return false;
         }
-        public async Task<IdentityResult?> SignUpNewUser(string userName, string email, string password)
-        {
-            UserModel user = new()
-            {
-                UserName = userName,
-                Email = email,
-            };
-            return await _userManager.CreateAsync(user, password);
-        }
+
 
 }
 

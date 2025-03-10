@@ -1,4 +1,5 @@
 ﻿using Luxa.Data;
+using Luxa.Interfaces;
 using Luxa.Models;
 using Luxa.ViewModel;
 using Microsoft.AspNetCore.Identity;
@@ -10,10 +11,14 @@ namespace Luxa.Services
     {
         private readonly UserManager<UserModel> _userManager;
         private readonly ApplicationDbContext _context;
-        public NotificationService(UserManager<UserModel> userManager, ApplicationDbContext context)
+        private readonly INotificationRepository _notifiactionRepository;
+        private readonly IUserRepository _userRepository;   
+        public NotificationService(UserManager<UserModel> userManager, ApplicationDbContext context,INotificationRepository notificationRepository, IUserRepository userRepository)
         {
             _userManager = userManager;
             _context = context;
+            _notifiactionRepository = notificationRepository;
+            _userRepository = userRepository;
         }
         public IQueryable<NotificationVM> GetNotificationsForUser(string userId)
             => _context.Users
@@ -90,6 +95,22 @@ namespace Luxa.Services
 
             _context.UserNotifications.Add(notification);
             await _context.SaveChangesAsync();
+        }
+
+        public async Task AssignDefaultNotificationToNewAccount(UserModel user) 
+        {
+            var fillUserDataNotifiaction = _notifiactionRepository.GetNotificationByTitle("Pełne Dane użytkownika");
+            var siteDevelopmentNotification = _notifiactionRepository.GetNotificationByTitle("Intensywny rozwój Luxa");
+            if (fillUserDataNotifiaction.Result == null || siteDevelopmentNotification.Result == null) 
+            {
+                Console.WriteLine($"Is Notification Added?: false");
+                return;
+            }
+            
+            var isFillUserDataNotifiactionAdded = await _userRepository.AddUserNotification(user.Id, fillUserDataNotifiaction.Result);
+            var isSiteDevelopmentNotificationAdded = await _userRepository.AddUserNotification(user.Id, siteDevelopmentNotification.Result);
+            var isAllNotificationsAdded = isFillUserDataNotifiactionAdded && isSiteDevelopmentNotificationAdded;
+            Console.WriteLine($"Is Notification Added?: {isAllNotificationsAdded}");
         }
     }
 }
