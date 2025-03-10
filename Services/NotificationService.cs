@@ -112,5 +112,11 @@ namespace Luxa.Services
             var isAllNotificationsAdded = isFillUserDataNotifiactionAdded && isSiteDevelopmentNotificationAdded;
             Console.WriteLine($"Is Notification Added?: {isAllNotificationsAdded}");
         }
+
+        public async Task<bool> MarkNotificationAsViewed(string userId, int notificationId)
+        {
+            var userNotification = await _userRepository.GetUserNotificationById(userId, notificationId);
+            return userNotification != null && await _userRepository.Update(userNotification);
+        }
     }
 }

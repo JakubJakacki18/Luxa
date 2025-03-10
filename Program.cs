@@ -1,5 +1,6 @@
 using Luxa.Data;
 using Luxa.Interfaces;
+using Luxa.MappingProfiles;
 using Luxa.Models;
 using Luxa.Repository;
 using Luxa.Services;
@@ -47,9 +48,9 @@ namespace Luxa
             builder.Services.AddScoped<IPhotoRepository, PhotoRepository>();
             builder.Services.AddScoped<ITagRepository, TagRepository>();
             builder.Services.AddScoped<ICommentRepository, CommentRepository>();
+            builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+            builder.Services.AddScoped<IUserRepository, UserRepository>();
 
-
-            
             //Services
             builder.Services.AddScoped<NotificationService>();
             builder.Services.AddScoped<ISettingsService, SettingsService>();
@@ -59,6 +60,11 @@ namespace Luxa
             builder.Services.AddScoped<IContactService, ContactService>();
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped<ICommentService, CommentService>();
+
+            //Mapper
+            builder.Services.AddAutoMapper(typeof(UserProfile));
+
+
 
             // Google
             builder.Services.AddAuthentication()

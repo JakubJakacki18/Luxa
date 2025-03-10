@@ -1,4 +1,5 @@
-﻿using Luxa.Data;
+﻿using AutoMapper;
+using Luxa.Data;
 using Luxa.Interfaces;
 using Luxa.Models;
 using Luxa.Services;
@@ -13,14 +14,15 @@ using System.Security.Claims;
 
 namespace Luxa.Controllers
 {
-    public class AccountController(ApplicationDbContext context, SignInManager<UserModel> signInManager,
-        UserManager<UserModel> userManager, NotificationService notificationService, IUserService userService) : Controller
+    public class AccountController(SignInManager<UserModel> signInManager,
+        UserManager<UserModel> userManager, NotificationService notificationService, IUserService userService, IMapper mapper, IServiceScopeFactory scopeFactory) : Controller
     {
         private readonly SignInManager<UserModel> _signInManager = signInManager;
         private readonly UserManager<UserModel> _userManager = userManager;
-        private readonly ApplicationDbContext _context = context;
         private readonly NotificationService _notificationService = notificationService;
         private readonly IUserService _userService = userService;
+        private readonly IMapper _mapper = mapper;
+        private readonly IServiceScopeFactory _scopeFactory= scopeFactory;
 
         //Atrybut do routingu (reszta kodu w program.cs)
         [Route("signin", Name = "SignIn")]
@@ -116,7 +118,7 @@ namespace Luxa.Controllers
         [HttpPost]
         public async Task<IActionResult> SignUp(SignUpVM signUpVM)
         {
-            if (!ModelState.IsValid 
+            if (!ModelState.IsValid
                 //|| string.IsNullOrEmpty(signUpVM.UserName)
                 //|| string.IsNullOrEmpty(signUpVM.Email)
                 )
@@ -185,7 +187,9 @@ namespace Luxa.Controllers
             List<UserModel> users = await _userService.GetAllUsers();
             var tasks = users.Select(async user =>
             {
-                var roles = await _userManager.GetRolesAsync(user);
+                using var scope = _scopeFactory.CreateScope();
+                var userManager = scope.ServiceProvider.GetRequiredService<UserManager<UserModel>>();
+                var roles = await userManager.GetRolesAsync(user);
                 //var notifications = await _notificationService.GetNotificationsForUser(user.Id);
                 return new UserEntryVM
                 {
@@ -203,77 +207,51 @@ namespace Luxa.Controllers
         {
             return View();
         }
-        //W fazie rozwoju
+
         [Authorize(Roles = "admin,moderator")]
         [HttpPost]
         public async Task<IActionResult> CreateUser(CreateUserVM createUserVM)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                var user = new UserModel()
-                {
-                    FirstName = createUserVM.FirstName,
-                    LastName = createUserVM.LastName,
-                    UserName = createUserVM.Username,
-                    Email = createUserVM.Email,
-                    Country = createUserVM.Country,
-                    PhoneNumber = createUserVM.PhoneNumber,
-                };
-                var resultAddUser = await _userManager.CreateAsync(user, createUserVM.Password!);
-                var resultAddRole = await _userManager.AddToRoleAsync(user, createUserVM.Role);
-                if (resultAddUser.Succeeded && resultAddRole.Succeeded)
-                {
-                    TempData["successMessage"] = "Utworzono użytkownika";
-                    return RedirectToAction("UsersList");
-                }
-
-                foreach (var error in resultAddUser.Errors)
-                {
-                    ModelState.AddModelError("", error.Description);
-                }
-
-                foreach (var error in resultAddRole.Errors)
-                {
-                    ModelState.AddModelError("", error.Description);
-                }
-
+                TempData["errorMessage"] = "Wystąpił niezidentyfikowany błąd";
+                return View();
+            }
+            var user = _mapper.Map<UserModel>(createUserVM);
+            var resultAddUser = await _userManager.CreateAsync(user, createUserVM.Password!);
+            var resultAddRole = await _userManager.AddToRoleAsync(user, createUserVM.Role);
+            if (resultAddUser.Succeeded && resultAddRole.Succeeded)
+            {
                 TempData["successMessage"] = "Utworzono użytkownika";
                 return RedirectToAction("UsersList");
             }
-            else
+            foreach (var error in resultAddUser.Errors.Concat(resultAddRole.Errors))
             {
-                TempData["errorMessage"] = "Wystąpił niezidentyfikowany błąd";
+                ModelState.AddModelError("", error.Description);
             }
 
             return View();
         }
         [Authorize(Roles = "admin,moderator")]
         [HttpPost]
-        //[Authorize(Roles = "admin,moderator")]
         public async Task<IActionResult> DeleteUser(string Id)
         {
             await _userService.RemoveUserById(Id);
             return Ok();
         }
+
         [Authorize(Roles = "admin,moderator")]
         public async Task<IActionResult> EditUser(string Id)
         {
             var user = await _userManager.FindByIdAsync(Id);
             if (user == null)
                 return RedirectToAction("Error", "Home");
-            EditUserVM editUserVM = new()
-            {
-                UserName = user.UserName,
-                FirstName = user.FirstName,
-                LastName = user.LastName,
-                Email = user.Email,
-                Country = user.Country,
-                PhoneNumber = user.PhoneNumber,
-                Roles = await _userManager.GetRolesAsync(user)
-            };
-
+            var editUserVM = _mapper.Map<EditUserVM>(user, async opt =>
+                opt.Items["Roles"] = await _userManager.GetRolesAsync(user)
+            );
             return View(editUserVM);
         }
+
         [Authorize(Roles = "admin,moderator")]
         [HttpPost]
         public async Task<IActionResult> EditUser(string Id, EditUserVM editUserVM)
@@ -316,17 +294,10 @@ namespace Luxa.Controllers
         [Authorize]
         [HttpPost]
         [Route("Account/UserNotifications/{notificationId}")]
-        public IActionResult UserNotifications(int notificationId)
+        public async Task<IActionResult> UserNotifications(int notificationId)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var notification = _context.UserNotifications.FirstOrDefault(un => un.UserId == userId && un.NotificationId == notificationId);
-            if (notification != null)
-            {
-                notification.IsViewed = true;
-                _context.SaveChanges();
-                return Ok();
-            }
-            return NotFound();
+            return (userId!=null && await _notificationService.MarkNotificationAsViewed(userId, notificationId)) ? Ok() : NotFound();
         }
         [Authorize]
         public async Task<IActionResult> LoadMorePhotosToProfile(int pageNumber, int pageSize, string userName)
@@ -372,7 +343,7 @@ namespace Luxa.Controllers
                     FollowerCount = followerCount,
                     PendingFollowRequests = currentUser.UserName == userName
                         ? await _userService.GetPendingFollowRequests(currentUser.Id)
-                        : new List<FollowModel>()
+                        : []
                 };
 
                 return View(model);

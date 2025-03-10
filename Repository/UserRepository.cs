@@ -30,6 +30,15 @@ namespace Luxa.Repository
 
         public async Task<List<UserModel>> GetAllUsers()
             => await _context.Users.ToListAsync();
-        
+
+        public async Task<UserNotificationModel?> GetUserNotificationById(string userId, int notificationId)
+            => await _context.UserNotifications.SingleOrDefaultAsync(un => un.NotificationId == notificationId && un.UserId == userId);
+
+        public async Task<bool> Update(UserNotificationModel userNotification) 
+        {
+            _context.Update(userNotification);
+            return await SaveAsync();
+        }
+
     }
 }
