@@ -50,6 +50,7 @@ namespace Luxa
             builder.Services.AddScoped<ICommentRepository, CommentRepository>();
             builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
             builder.Services.AddScoped<IUserRepository, UserRepository>();
+            builder.Services.AddScoped<IFollowRepository, FollowRepository>();
 
             //Services
             builder.Services.AddScoped<NotificationService>();
@@ -60,6 +61,7 @@ namespace Luxa
             builder.Services.AddScoped<IContactService, ContactService>();
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped<ICommentService, CommentService>();
+            builder.Services.AddScoped<IFollowService, FollowService>();
 
             //Mapper
             builder.Services.AddAutoMapper(typeof(UserProfile));

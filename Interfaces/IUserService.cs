@@ -1,4 +1,5 @@
-﻿using Luxa.Models;
+﻿using Luxa.Data.Enums;
+using Luxa.Models;
 using System.Security.Claims;
 
 namespace Luxa.Interfaces
@@ -17,5 +18,6 @@ namespace Luxa.Interfaces
         Task<List<UserModel>> GetFollowedUsers(string userId);
         Task<bool> IsOwnerOrAdmin(string? OwnerName, ClaimsPrincipal user);
         Task<List<UserModel>> GetAllUsers();
+        Task<bool> UpdateUserPhoto(UserModel userModel, IFormFile file, TypeOfProfilePhoto typeOfProfilePhoto);
     }
 }

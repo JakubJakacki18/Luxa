@@ -99,16 +99,16 @@ namespace Luxa.Services
 
         public async Task AssignDefaultNotificationToNewAccount(UserModel user) 
         {
-            var fillUserDataNotifiaction = _notifiactionRepository.GetNotificationByTitle("Pełne Dane użytkownika");
-            var siteDevelopmentNotification = _notifiactionRepository.GetNotificationByTitle("Intensywny rozwój Luxa");
-            if (fillUserDataNotifiaction.Result == null || siteDevelopmentNotification.Result == null) 
+            var fillUserDataNotifiaction = await _notifiactionRepository.GetNotificationByTitle("Pełne Dane użytkownika");
+            var siteDevelopmentNotification = await _notifiactionRepository.GetNotificationByTitle("Intensywny rozwój Luxa");
+            if (fillUserDataNotifiaction == null || siteDevelopmentNotification == null) 
             {
                 Console.WriteLine($"Is Notification Added?: false");
                 return;
             }
             
-            var isFillUserDataNotifiactionAdded = await _userRepository.AddUserNotification(user.Id, fillUserDataNotifiaction.Result);
-            var isSiteDevelopmentNotificationAdded = await _userRepository.AddUserNotification(user.Id, siteDevelopmentNotification.Result);
+            var isFillUserDataNotifiactionAdded = await _userRepository.AddUserNotification(user.Id, fillUserDataNotifiaction);
+            var isSiteDevelopmentNotificationAdded = await _userRepository.AddUserNotification(user.Id, siteDevelopmentNotification);
             var isAllNotificationsAdded = isFillUserDataNotifiactionAdded && isSiteDevelopmentNotificationAdded;
             Console.WriteLine($"Is Notification Added?: {isAllNotificationsAdded}");
         }

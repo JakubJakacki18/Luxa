@@ -1,4 +1,5 @@
 ﻿using Luxa.Data;
+using Luxa.Data.Enums;
 using Luxa.Interfaces;
 using Luxa.Models;
 using Luxa.ViewModel;
@@ -65,21 +66,6 @@ namespace Luxa.Services
             return result.Succeeded;
         }
 
-        /*public int GetUserLevel(int reputation)
-		{
-			int[] thresholds = { 20, 50, 100, 200, 500, 1000, 5000 };
-			for (int i = 1; i <= thresholds.Length; i++)
-			{
-				if (reputation < thresholds[i])
-				{
-					return i;
-				}
-			}
-			return thresholds.Length + 1;
-
-		}*/
-
-
         public async Task<bool> UpdateReputation(UserModel userModel)
         {
             int reputation = 0;
@@ -129,6 +115,34 @@ namespace Luxa.Services
 
         public async Task<List<UserModel>> GetAllUsers()
             => await _userRepository.GetAllUsers();
+
+        public async Task<bool> UpdateUserPhoto(UserModel userModel, IFormFile file, TypeOfProfilePhoto typeOfProfilePhoto) 
+        {
+            if (file == null)
+                return false;
+
+            var fileName = Path.GetFileName(file.FileName);
+            var filePath = Path.Combine("wwwroot/avatars", fileName);
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+            updatePhotoUrl(userModel,fileName, typeOfProfilePhoto);
+            await _userManager.UpdateAsync(userModel);
+            return true;
+        }
+        private void updatePhotoUrl(UserModel userModel, string fileName, TypeOfProfilePhoto typeOfProfilePhoto)
+        {
+            switch (typeOfProfilePhoto)
+            {
+                case TypeOfProfilePhoto.avatar:
+                    userModel.AvatarUrl = $"/avatars/{fileName}";
+                    break;
+                case TypeOfProfilePhoto.background:
+                    userModel.BackgroundUrl = $"/avatars/{fileName}";
+                    break;
+            }
+        }
 
 
 

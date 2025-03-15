@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Luxa.Data;
+using Luxa.Data.Enums;
 using Luxa.Interfaces;
 using Luxa.Models;
 using Luxa.Services;
@@ -15,7 +16,12 @@ using System.Security.Claims;
 namespace Luxa.Controllers
 {
     public class AccountController(SignInManager<UserModel> signInManager,
-        UserManager<UserModel> userManager, NotificationService notificationService, IUserService userService, IMapper mapper, IServiceScopeFactory scopeFactory) : Controller
+                                   UserManager<UserModel> userManager,
+                                   NotificationService notificationService,
+                                   IUserService userService,
+                                   IMapper mapper,
+                                   IServiceScopeFactory scopeFactory,
+                                   IFollowService followService) : Controller
     {
         private readonly SignInManager<UserModel> _signInManager = signInManager;
         private readonly UserManager<UserModel> _userManager = userManager;
@@ -23,6 +29,7 @@ namespace Luxa.Controllers
         private readonly IUserService _userService = userService;
         private readonly IMapper _mapper = mapper;
         private readonly IServiceScopeFactory _scopeFactory= scopeFactory;
+        private readonly IFollowService _followService = followService;
 
         //Atrybut do routingu (reszta kodu w program.cs)
         [Route("signin", Name = "SignIn")]
@@ -197,7 +204,7 @@ namespace Luxa.Controllers
                     Roles = roles,
                 };
             });
-            usersListVM = (await Task.WhenAll(tasks)).ToList();
+            usersListVM = [.. (await Task.WhenAll(tasks))];
             return View(usersListVM);
         }
 
@@ -310,109 +317,73 @@ namespace Luxa.Controllers
         //[HttpGet]
         public async Task<IActionResult> UserProfile(string userName)
         {
-            // zalogowany uzytkownik
-            var currentUser = _userService.GetCurrentLoggedInUser(User);
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser == null)
+                return RedirectToAction("SignIn");
+            var profileUser = await _userService.GetUserByUserName(userName);
+            if (profileUser == null || profileUser.UserName == null)
+                return NotFound();
 
-            // czy istnieje
-            if (await _userService.IsUserWithUserNameExist(userName) && currentUser != null && currentUser.UserName != null)
+            var avatarUrl = !string.IsNullOrEmpty(profileUser.AvatarUrl) ? profileUser.AvatarUrl : "/assets/blank-profile-picture.png";
+            var backgroundUrl = !string.IsNullOrEmpty(profileUser.BackgroundUrl) ? profileUser.BackgroundUrl : "/assets/prostokat.png";
+            var isFollowing = await _userService.IsFollowing(currentUser.Id, profileUser.Id);
+            var followerCount = await _followService.GetFollowersCount(profileUser.Id);
+
+            var model = new UserProfileVM
             {
-                var profileUser = await _userService.GetUserByUserName(userName);
+                UserName = profileUser.UserName,
+                AvatarUrl = avatarUrl,
+                BackgroundUrl = backgroundUrl,
+                Description = profileUser.Description,
+                IsCurrentUserProfile = currentUser.UserName == userName,
+                IsFollowing = isFollowing,
+                FollowerCount = followerCount,
+                PendingFollowRequests = currentUser.UserName == userName
+                    ? await _userService.GetPendingFollowRequests(currentUser.Id)
+                    : []
+            };
 
-                if (profileUser == null || profileUser.UserName == null)
-                {
-                    return NotFound();
-                }
-
-                // domyslny avatar
-                var avatarUrl = !string.IsNullOrEmpty(profileUser.AvatarUrl) ? profileUser.AvatarUrl : "/assets/blank-profile-picture.png";
-                // domyslny avatar
-                var backgroundUrl = !string.IsNullOrEmpty(profileUser.BackgroundUrl) ? profileUser.BackgroundUrl : "/assets/prostokat.png";
-                //ilosc obserwujacych
-                var isFollowing = currentUser != null && await _userService.IsFollowing(currentUser.Id, profileUser.Id);
-                var followerCount = await _context.FollowRequests.CountAsync(fr => fr.FolloweeId == profileUser.Id && fr.IsApproved);
-
-                var model = new UserProfileVM
-                {
-                    UserName = profileUser.UserName,
-                    AvatarUrl = avatarUrl,
-                    BackgroundUrl = backgroundUrl,
-                    Description = profileUser.Description,
-                    IsCurrentUserProfile = currentUser.UserName == userName,
-                    //IsFollowing = await _userService.IsFollowing(currentUser.Id, profileUser.Id),
-                    IsFollowing = isFollowing,
-                    FollowerCount = followerCount,
-                    PendingFollowRequests = currentUser.UserName == userName
-                        ? await _userService.GetPendingFollowRequests(currentUser.Id)
-                        : []
-                };
-
-                return View(model);
-            }
-
-            return NotFound();
+            return View(model);
         }
 
         [Authorize]
         [HttpPost]
         public async Task<IActionResult> UploadAvatar(IFormFile avatar)
         {
-            if (avatar != null && avatar.Length > 0)
-            {
-                var user = await _userManager.GetUserAsync(User);
-                var fileName = Path.GetFileName(avatar.FileName);
-                var filePath = Path.Combine("wwwroot/avatars", fileName);
-
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    await avatar.CopyToAsync(stream);
-                }
-
-                user.AvatarUrl = $"/avatars/{fileName}";
-                await _userManager.UpdateAsync(user);
-
-                return RedirectToAction("UserProfile", new { userName = user.UserName });
-            }
-
-            return RedirectToAction("UserProfile", new { userName = User.Identity.Name });
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser == null)
+                return RedirectToAction("SignIn");
+            if (await _userService.UpdateUserPhoto(currentUser, avatar, TypeOfProfilePhoto.avatar))
+            return RedirectToAction("UserProfile", new { userName = currentUser.UserName });
+            else
+                return RedirectToAction("Error", "Home");
         }
 
         [Authorize]
         [HttpPost]
         public async Task<IActionResult> UploadBackground(IFormFile background)
         {
-            if (background != null && background.Length > 0)
-            {
-                var user = await _userManager.GetUserAsync(User);
-                var fileName = Path.GetFileName(background.FileName);
-                var filePath = Path.Combine("wwwroot/avatars", fileName); ;
-
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    await background.CopyToAsync(stream);
-                }
-
-                user.BackgroundUrl = $"/avatars/{fileName}";
-                await _userManager.UpdateAsync(user);
-
-                return RedirectToAction("UserProfile", new { userName = user.UserName });
-            }
-
-            return RedirectToAction("UserProfile", new { userName = User.Identity.Name });
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser == null)
+                return RedirectToAction("SignIn");
+            if (await _userService.UpdateUserPhoto(currentUser, background, TypeOfProfilePhoto.background))
+                return RedirectToAction("UserProfile", new { userName = currentUser.UserName });
+            else
+                return RedirectToAction("Error", "Home");
         }
 
         [Authorize]
         public async Task<IActionResult> Follow(string userName)
         {
-            var currentUser = _userService.GetCurrentLoggedInUser(User);
+            var currentUser = await _userManager.GetUserAsync(User);
             var followee = await _userService.GetUserByUserName(userName);
 
             if (followee == null || currentUser == null || currentUser.Id == followee.Id)
                 return NotFound();
 
-            var existingRequest = await _context.FollowRequests
-                .FirstOrDefaultAsync(fr => fr.FollowerId == currentUser.Id && fr.FolloweeId == followee.Id);
+            var existingFollowRequest = await _followService.GetFollowModelByUserIds(currentUser.Id, followee.Id);
 
-            if (existingRequest == null)
+            if (existingFollowRequest == null)
             {
                 var followRequest = new FollowModel
                 {
@@ -421,8 +392,8 @@ namespace Luxa.Controllers
                     IsApproved = !followee.IsPrivate
                 };
 
-                _context.FollowRequests.Add(followRequest);
-                await _context.SaveChangesAsync();
+                if(!await _followService.Create(followRequest))
+                    return RedirectToAction("Error", "Home");
 
                 if (followee.IsPrivate)
                 {
@@ -436,7 +407,7 @@ namespace Luxa.Controllers
                     TempData["FollowStatus"] = "approved";
                 }
             }
-            else if (!existingRequest.IsApproved)
+            else if (!existingFollowRequest.IsApproved)
             {
                 TempData["FollowMessage"] = "Twoja prośba o obserwację jest w trakcie rozpatrywania.";
                 TempData["FollowStatus"] = "pending";
@@ -448,20 +419,19 @@ namespace Luxa.Controllers
         [Authorize]
         public async Task<IActionResult> Unfollow(string userName)
         {
-            var currentUser = _userService.GetCurrentLoggedInUser(User);
+            var currentUser = await _userManager.GetUserAsync(User);
             var followee = await _userService.GetUserByUserName(userName);
 
             if (followee == null || currentUser == null || currentUser.Id == followee.Id)
                 return NotFound();
 
-            var followRequest = await _context.FollowRequests
-                .FirstOrDefaultAsync(fr => fr.FollowerId == currentUser.Id && fr.FolloweeId == followee.Id);
+            var existingFollowRequest = await _followService.GetFollowModelByUserIds(currentUser.Id, followee.Id);
 
-            if (followRequest != null)
-            {
-                _context.FollowRequests.Remove(followRequest);
-                await _context.SaveChangesAsync();
-            }
+            if (existingFollowRequest == null)
+                return RedirectToAction("Error", "Home");
+
+            if(!await _followService.Delete(existingFollowRequest))
+                return RedirectToAction("Error", "Home");
 
             TempData["FollowMessage"] = "Przestałeś obserwować użytkownika.";
             TempData["FollowStatus"] = "none";
