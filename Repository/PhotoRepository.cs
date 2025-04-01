@@ -35,23 +35,11 @@ namespace Luxa.Repository
 				.SelectMany(u => u.UserLikedPhotos)
 				.Select(u => u.Photo);
 
-		public Photo GetPhotoById(int idPhoto)
-			=> _context.Photo
-				.Where(e => e.Id == idPhoto)
-				.First();
-
 		public bool Save()
 			=> _context.SaveChanges() > 0;
 
-		public async Task<bool> SaveAsync()
+		private async Task<bool> SaveAsync()
 			=> await _context.SaveChangesAsync() > 0;
-
-
-		public bool Add(Photo photo)
-		{
-			_context.Add(photo);
-			return Save();
-		}
 
 		public bool RemoveLikeToPhoto(UserPhotoModel userPhoto)
 		{
@@ -74,26 +62,45 @@ namespace Luxa.Repository
 
         public bool LikeCount(Photo photo)
         {
-
             photo.LikeCount = _context.UserLikedPhotos.Count(ul => ul.PhotoId == photo.Id);
             return Save();
-
-        }
-       
-        public async Task<Photo?> GetPhotoByIdAsync(int id)
-        {
-            return await _context.Photo.FindAsync(id);
-        }
-
-        public async Task UpdatePhotoAsync(Photo photo)
-        {
-            _context.Update(photo);
-            await _context.SaveChangesAsync();
         }
 
         public async Task<bool> PhotoExistsAsync(int id)
         {
             return await _context.Photo.AnyAsync(e => e.Id == id);
         }
-    }
+
+        public async Task<IEnumerable<Photo>> GetPhotosWithOwner()
+	        => await _context.Photo.Include(m => m.Owner).ToListAsync();
+        
+
+        public async Task<IEnumerable<Photo>> GetAll() 
+	        => await _context.Photo.Where(photo => photo.Owner.IsPrivate == false).ToListAsync();
+
+        public async Task<Photo?> GetOne(int id)
+			=> await _context.Photo.FindAsync(id);
+        
+        public async Task<bool> Create(Photo model)
+        {
+	        await _context.AddAsync(model);
+	        return await SaveAsync();	
+        }
+        public async Task<Photo?> GetOneWithOwner(int id)
+	        => await _context.Photo
+		        .Include(p => p.Owner)
+		        .FirstOrDefaultAsync(p => p.Id == id);
+
+        public async Task<bool> Update(Photo model)
+        {
+	        _context.Update(model);
+	        return await SaveAsync();
+        }
+
+        public async Task<bool> Delete(Photo model)
+        {
+	        _context.Remove(model);
+	        return await SaveAsync();
+        }
+	}
 }

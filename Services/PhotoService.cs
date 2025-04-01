@@ -31,25 +31,16 @@ namespace Luxa.Services
             _tagService = tagService;
             _httpContextAccessor = httpContextAccessor;
         }
-
-        public Photo GetImageById(int id)
+        public async Task<Photo?> GetImageByIdAsync(int id)
         {
-            return _photoRepository.GetPhotoById(id);
-        }
-        public async Task<Photo> GetImageByIdAsync(int id)
-        {
-            return await _photoRepository.GetPhotoByIdAsync(id);
+            return await _photoRepository.GetOne(id);
         }
 
         public async Task<IEnumerable<Photo>> GetAllImagesAsync()
         {
             return await _context.Photo.ToListAsync();
         }
-        public async Task<bool> Create(UserModel user)
-        {
-            return true;
-        }
-
+        
         public async Task<bool> Create(Photo photo, UserModel user, string tags)
         {
             if (!_tagService.Add(tags))
@@ -66,11 +57,9 @@ namespace Luxa.Services
             {
                 await photo.ImageFile.CopyToAsync(fileStream);
             }
-            if (!_photoRepository.Add(photo))
+            if (!await _photoRepository.Create(photo))
                 return false;
-            if (!AddTagsToPhoto(photo, tagsToPhoto))
-                return false;
-            return true;
+            return AddTagsToPhoto(photo, tagsToPhoto);
         }
 
 
@@ -84,75 +73,13 @@ namespace Luxa.Services
             throw new NotImplementedException();
         }
 
-        public async Task Edit(int id, Photo photo, UserModel user)
-        {
-
-            _context.Update(photo);
-
-        }
-
-        public Task Edit(Photo photo, UserModel user)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<bool> Edit()
-        {
-            throw new NotImplementedException();
-        }
-
-        Task<bool> IPhotoService.Edit(int id, Photo photo, UserModel user)
-        {
-            throw new NotImplementedException();
-        }
-
-
-        //      public List<Photo>[] Prototyp(List<Photo> photos,int columnHeight)
-        //      { 
-        //	photos.OrderBy(photo => photo.Height);
-        //	List<Photo>[] arrayOfLists = new List<Photo>[3];
-        //          int totalHeight = 0;
-        //          foreach (var item in arrayOfLists)
-        //          {
-        //              foreach (Photo photo in photos)
-        //              {
-        //                  if (totalHeight + photo.Height <= columnHeight)
-        //                  {
-        //                      item.Add(photo);
-        //                      photos.Remove(photo);
-        //                      totalHeight += photo.Height;
-        //                  }
-        //              }
-        //          }
-        //          return arrayOfLists;
-        //}
-
-        //public LimitedHeightPhotosVM GetAmountOfPhotos(int quantity, int height)
-        //{
-        //          List<Photo> myPhotos = _context.Photo
-        //	.Where(photo => photo.Height < height)
-        //	.OrderByDescending(photo => photo.AddTime)
-        //	.Take(quantity)
-        //	.ToList();
-
-        //          if (myPhotos.Count < quantity) 
-        //          {
-
-
-        //          }
-        //	return new LimitedHeightPhotosVM
-        //	{
-        //		photos = myPhotos,
-        //		isFoundedRightQuantity = null
-        //	};
-
-        //}
+        
         public bool IsPhotoLiked(int idPhoto, List<Photo> photos)
             => photos.Select(e => e.Id).Contains(idPhoto);
 
-        public bool LikePhoto(int idPhoto, UserModel user)
+        public async Task<bool> LikePhoto(int idPhoto, UserModel user)
         {
-            var photo = _photoRepository.GetPhotoById(idPhoto);
+            var photo = await _photoRepository.GetOne(idPhoto);
             var userPhoto = new UserPhotoModel
             {
                 PhotoId = idPhoto,
@@ -217,20 +144,6 @@ namespace Luxa.Services
             => await _photoRepository.GetLikedPhotos(user).ToListAsync();
 
 
-        /*int totalHeight = 0;
-
-				// Sortowanie zdjęć według wysokości malejąco
-				var sortedPhotos = photos.OrderByDescending(p => p.Height).ToList();
-
-				foreach (var photo in sortedPhotos)
-				{
-					if (totalHeight + photo.Height <= columnHeight)
-					{
-						selectedPhotos.Add(photo);
-						totalHeight += photo.Height;
-					}
-				}
-		*/
 
 
         public bool AddTagsToPhoto(Photo photo, List<TagModel> tagNames)
@@ -353,17 +266,35 @@ namespace Luxa.Services
 
         public async Task<Photo?> GetPhotoAsync(int id)
         {
-            return await _photoRepository.GetPhotoByIdAsync(id);
+            return await _photoRepository.GetOne(id);
         }
 
         public async Task EditPhotoAsync(Photo photo)
         {
-            await _photoRepository.UpdatePhotoAsync(photo);
+            await _photoRepository.Update(photo);
         }
 
         public async Task<bool> PhotoExistsAsync(int id)
+            => await _photoRepository.PhotoExistsAsync(id);
+
+        public async Task<IEnumerable<Photo>> GetPhotosWithOwner()
+            => await _photoRepository.GetPhotosWithOwner();
+        public string GetContentType(string extension)
         {
-            return await _photoRepository.PhotoExistsAsync(id);
+            return extension.ToLower() switch
+            {
+                ".jpg" => "image/jpeg",
+                ".jpeg" => "image/jpeg",
+                ".png" => "image/png",
+                ".gif" => "image/gif",
+                _ => "application/octet-stream",
+            };
         }
+
+        public async Task<Photo?> GetOneWithOwner(int id)
+            => await _photoRepository.GetOneWithOwner(id);
+
+        public async Task<bool> Delete(Photo photo)
+            => await _photoRepository.Delete(photo);
     }
 }
