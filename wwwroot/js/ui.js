@@ -27,12 +27,10 @@ export function changeLikeButton(id) {
 	console.log('img.src: ' + img.src + ' likePath: ' + likePath)
 	if (img.src === url + unlikePath) {
 		img.src = url + likePath;
-		console.log('niby prawda że unlike jest');
 		currentValue++;
 	}
 	else {
 		img.src = url + unlikePath;
-		console.log('niby prawda że like jest');
 		currentValue--;
 	}
 	like.textContent = currentValue;

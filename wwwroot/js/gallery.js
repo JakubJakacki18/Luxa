@@ -45,7 +45,7 @@ window.addEventListener('scroll', () => {
 	if (!isLoadingPhotos && isNotAllPhotos && (window.innerHeight + window.scrollY) >= document.body.offsetHeight) {
 		console.log("Scroll zadziałał, wykonuje się if");
 		isLoadingPhotos = true;
-		loadPhotos().then((result) => {
+		loadPhotos(pageNumber, pageSize).then((result) => {
 			isNotAllPhotos = result;
 			isLoadingPhotos = false;
 		});
@@ -74,12 +74,10 @@ export async function initPhotos() {
 	generateColumns(getWindowWidth(), maxQuantityOfColumns, pixelsPerColumn);
 	isLoadingPhotos = true;
 	while (isLoadingPhotos && isNotAllPhotos && (window.innerHeight >= document.body.offsetHeight)) {
-		console.log("pętla: " + isLoadingPhotos);
 		if (!(await loadPhotos(pageNumber, pageSize))) {
 			isNotAllPhotos = false;
 			break;
 		}
-		pageNumber++;
 	}
 	isLoadingPhotos = false;
 
