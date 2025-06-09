@@ -96,6 +96,12 @@
 			<div class="form-group">
 				<label asp-for="ImageFile" class="control-label"></label>
 				<input asp-for="ImageFile" accept="image/*" />
+				<div class="form-group mt-3">
+					<label for="brightnessRange">Jasność zdjęcia:</label>
+					<input type="range" id="brightnessRange" min="50" max="150" value="100" />
+				</div>
+				<canvas id="previewCanvas" style="max-width: 100%; border: 1px solid #ccc; margin-top: 10px;"></canvas>
+
 				<span asp-validation-for="ImageFile" class="text-danger"></span>
 			</div>
 
@@ -103,6 +109,8 @@
 
 
 			<div class="form-group">
+				<input type="hidden" id="ProcessedImage" name="ProcessedImage" />
+
 				<input type="submit" value="Dodaj zdjęcie" class="btn btn-primary" />
 			</div>
 		</form>
@@ -116,11 +124,12 @@
 }
 
 <script>
-	document.addEventListener('DOMContentLoaded', function () {
+		document.addEventListener('DOMContentLoaded', function () {
 		const inputField = document.getElementById('input-field');
 		const inputBlocks = document.getElementById('input-blocks');
 		const tagsInput = document.getElementById('tags');
 
+		// Obsługa tagów
 		inputField.addEventListener('keydown', function (event) {
 			if (event.key === ' ' || event.key === ',') {
 				event.preventDefault();
@@ -132,6 +141,7 @@
 				updateTagsInput();
 			}
 		});
+
 		function isTagPresent(tag) {
 			const currentTags = tagsInput.value.split(',').map(t => t.trim());
 			return currentTags.includes(tag);
@@ -172,7 +182,56 @@
 			});
 			tagsInput.value = tags.join(',');
 		}
+
+		// Podgląd zdjęcia i jasność
+		const imageInput = document.getElementById('ImageFile');
+		const canvas = document.getElementById('previewCanvas');
+		const ctx = canvas.getContext('2d');
+		const brightnessRange = document.getElementById('brightnessRange');
+
+		let originalImage = null;
+
+		imageInput.addEventListener('change', function (e) {
+			const file = e.target.files[0];
+			if (!file) return;
+
+			const reader = new FileReader();
+			reader.onload = function (event) {
+				const img = new Image();
+				img.onload = function () {
+					canvas.width = img.width;
+					canvas.height = img.height;
+					originalImage = img;
+					drawImageWithBrightness(img, brightnessRange.value);
+				};
+				img.src = event.target.result;
+			};
+			reader.readAsDataURL(file);
+		});
+
+		brightnessRange.addEventListener('input', function () {
+			if (originalImage) {
+				drawImageWithBrightness(originalImage, brightnessRange.value);
+			}
+		});
+
+		function drawImageWithBrightness(img, brightness) {
+			ctx.clearRect(0, 0, canvas.width, canvas.height);
+			ctx.drawImage(img, 0, 0);
+			const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+			const data = imageData.data;
+			const brightnessFactor = brightness / 100;
+
+			for (let i = 0; i < data.length; i += 4) {
+				data[i] = data[i] * brightnessFactor;     // R
+				data[i + 1] = data[i + 1] * brightnessFactor; // G
+				data[i + 2] = data[i + 2] * brightnessFactor; // B
+				// alfa pozostaje bez zmian
+			}
+			ctx.putImageData(imageData, 0, 0);
+		}
 	});
+
 
 
 </script>
