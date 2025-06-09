@@ -40,9 +40,13 @@
 .photo-galery {
     display: flex;
     gap: 10px;
+    align-items: flex-start;
 }
 
 .column {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
     flex: 1;
 }
 

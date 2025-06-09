@@ -1,5 +1,5 @@
 ﻿import { getShortestColumn, getOrder } from './utils.js';
-import { unlikePath, likePath, setDefaultPageNumberAndIsNotAllPhotos, setSearchingAttributes,initPhotos } from './gallery.js';
+import { unlikePath, likePath, setDefaultPageNumberAndIsNotAllPhotos, setSearchingAttributes, initPhotos } from './gallery.js';
 
 export function generateColumns(windowWidth, maxQuantityOfColumns, pixelsPerColumn) {
 	const galery = document.querySelector('.photo-galery');
@@ -40,62 +40,51 @@ export function changeLikeButton(id) {
 export function addPhotosToColumns(photos) {
 	const columns = document.querySelectorAll('.columnHeight');
 	photos.forEach((photo) => {
-		console.log(photo);
-		console.log("len:" + columns.length);
-		console.log("/Image/" + photo.photo.name);
-		const column = getShortestColumn(columns);
+		const isLiked = photo.isLiked;
+		const likeString = isLiked ? likePath : unlikePath;
 		const photoDiv = document.createElement('div');
-		//trzeba pobrać wartość z modelu
-		const isLiked = photo.isLiked
-		if (isLiked) {
-			var likeString = likePath;
-		}
-		else {
-			var likeString = unlikePath;
-		}
 		photoDiv.classList.add('photo', 'trigger');
-		photoDiv.innerHTML = `
-									<a type="button" href="/Photos/Details/${photo.photo.id}">
-											<img src="/Image/${photo.photo.name}" alt="${photo.photo.name}">
-									</a>
-										<div class="target">
-											<div class="like">
-												<a onclick="likeOrUnlikePhoto(${photo.photo.id})" type="button">
-													<img id="photo.${photo.photo.id}" src="${likeString}">
-												</a>
-											</div>
-												<div class="like-text" id="likes.${photo.photo.id}">${photo.photo.likeCount}</div>
-											<div class="user">
-												 ${photo.ownerName}
-											</div>
-										</div>
+		const img = new Image();
+		img.src = `/Image/${encodeURIComponent(photo.photo.name)}`;
+		img.alt = photo.photo.name;
 
-							`;
-		column.appendChild(photoDiv);
+		img.onload = () => {
+			photoDiv.innerHTML = `
+				<a type="button" href="/Photos/Details/${photo.photo.id}">
+					<img src="/Image/${photo.photo.name}" alt="${photo.photo.name}">
+				</a>
+				<div class="target">
+					<div class="like">
+						<a onclick="likeOrUnlikePhoto(${photo.photo.id})" type="button">
+							<img id="photo.${photo.photo.id}" src="${likeString}">
+						</a>
+					</div>
+					<div class="like-text" id="likes.${photo.photo.id}">${photo.photo.likeCount}</div>
+					<div class="user">
+						${photo.ownerName}
+					</div>
+				</div>
+			`;
+
+			const shortestColumn = getShortestColumn(columns);
+			shortestColumn.appendChild(photoDiv);
+			addTrigger(photoDiv); // dodaj animację tylko do tego elementu
+		};
 	});
-	addTrigger();
 }
 
-function addTrigger() {
-	const triggers = document.querySelectorAll('.photo.trigger');
-	console.log("test");
-	triggers.forEach(trigger => {
-		const target = trigger.querySelector('.target');
 
-		trigger.addEventListener('mouseenter', function () {
-			target.style.opacity = '1';
-			console.log("zmiana na 1");
-		});
-
-		trigger.addEventListener('mouseleave', function () {
-			target.style.opacity = '0';
-			console.log("zmiana na 0");
-		});
+function addTrigger(element) {
+	const target = element.querySelector('.target');
+	element.addEventListener('mouseenter', () => {
+		target.style.opacity = '1';
 	});
-};
+	element.addEventListener('mouseleave', () => {
+		target.style.opacity = '0';
+	});
+}
 
-export function notifyAboutLackOfPhotos()
-{
+export function notifyAboutLackOfPhotos() {
 	const newBox = document.querySelector('.newBox');
 	const info = document.createElement('div');
 	info.classList.add('photos-info');
