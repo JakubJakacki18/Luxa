@@ -1,6 +1,6 @@
 ﻿import { getWindowWidth } from './utils.js';
 import { loadPhotos, likeOrUnlikePhoto } from './api.js';
-import { generateColumns, changeData} from './ui.js';
+import { generateColumns, changeData } from './ui.js';
 
 // Eksponowanie funkcji jako globalnej
 window.likeOrUnlikePhoto = likeOrUnlikePhoto;
@@ -48,6 +48,7 @@ window.addEventListener('scroll', () => {
 		loadPhotos(pageNumber, pageSize).then((result) => {
 			isNotAllPhotos = result;
 			isLoadingPhotos = false;
+			pageNumber++;
 		});
 	}
 });
@@ -78,6 +79,7 @@ export async function initPhotos() {
 			isNotAllPhotos = false;
 			break;
 		}
+		pageNumber++;
 	}
 	isLoadingPhotos = false;
 
